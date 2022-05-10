@@ -1,8 +1,8 @@
 """Main code to execute"""
-
+from src.Game import Game
 
 def main():
-    pass
+    game = Game()
 
 
 if __name__ == "__main__":
