@@ -7,6 +7,7 @@ sys.path.append(file_dir)
 
 import pygame
 import constants
+from Screen import Screen
 
 class Game:
     def __init__(self) -> None:
@@ -14,20 +15,8 @@ class Game:
         pygame.init()
         self.state = "start"
         self.states = {}
-        self.screen = self.initialize_screen()
+        self.screen = Screen(constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT)
 
-    def initialize_screen(self) -> pygame.display:
-        """Initialize game window."""
-        # Create screen
-        window = (constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT)
-        pygame.display.set_caption("Snake")
-        screen = pygame.display.set_mode(size=window)
-        # Fill screen with black
-        black = (0, 0, 0)
-        screen.fill((black))
-        pygame.display.update()
-
-        return screen
 
     def change_state(self, new_state, params: dict) -> None:
         """

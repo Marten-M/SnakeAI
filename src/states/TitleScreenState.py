@@ -8,5 +8,6 @@ class TitleScreenState:
     
     def draw_title_screen(self):
         """Draw the title screen."""
-        font = pygame.font.Font("../../fonts/ARCADECLASSIC.TTF", 32)
+        self.game.screen.font = pygame.font.Font("../../fonts/ARCADECLASSIC.TTF", 32)
+        
         
