@@ -2,6 +2,10 @@
 
 class BaseState:
     """BaseState class with empty default functions."""
+    def __init__(self) -> None:
+        """Initialize base state class."""
+        self.drawFPS = True # Draw FPS by default
+
     def update(self) -> None:
         """Update game state."""
         pass

@@ -17,6 +17,7 @@ class TitleScreenState(BaseState):
         self.create_boxes()
         self.current_selection = 0
         self.input_ticker = 0
+        self.clock = pygame.time.Clock()
 
     def render(self) -> None:
         """Draw the title screen."""
@@ -24,10 +25,10 @@ class TitleScreenState(BaseState):
         self.game.screen.graphics["color"] = gColors["white"]
         self.game.screen.graphics["border-width"] = 2
         # Draw large title
-        self.game.screen.graphics["font"] = "largeFont"
+        self.game.screen.graphics["font"] = "veryLargeFont"
         self.game.screen.draw_text("SNAKE GAME", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 4)
 
-        self.game.screen.graphics["font"] = "mediumFont"
+        self.game.screen.graphics["font"] = "largeFont"
         # Draw play box
         self.set_selection_color(1)
         self.game.screen.draw_box(rect=self.play_box, fill=False)
@@ -49,10 +50,14 @@ class TitleScreenState(BaseState):
         self.game.screen.clear()
         self.render()
 
+        dt = self.clock.tick() / 1000
+
+        return dt
+
     def create_boxes(self) -> None:
         """Create PlAY and EXIT boxes."""
-        box_width = SCREEN_WIDTH * 0.25
-        box_height = 30
+        box_width = SCREEN_WIDTH * 0.4
+        box_height = 60
 
         center_pos_horizontal = SCREEN_WIDTH / 2 - box_width / 2
         play_box_pos_vertical = SCREEN_HEIGHT / 2

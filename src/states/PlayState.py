@@ -1,13 +1,12 @@
 """Play state class for snake game."""
 import pygame
-import random
 
 # Get intellisense for Game class
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from src.lib.Game import Game
 # Constants
-from src.constants import BOARD_SIZE, TILE_SIZE
+from src.constants import BOARD_SIZE, TILE_SIZE, SCREEN_WIDTH, SCREEN_HEIGHT
 # State imports
 from src.states.BaseState import BaseState
 # Class imports
@@ -20,46 +19,67 @@ class PlayState(BaseState):
         pygame.init()
         self.game: Game = game
         self.score = 0
+        self.paused = False
 
         self.snake = Snake(self.game, BOARD_SIZE // 2, BOARD_SIZE // 2)
-        self.direction = "E"
+        self.direction = self.current_direction = self.last_direction = "E"
 
         self.clock = pygame.time.Clock()
         self.move_speed = 2.4 # How many tiles to move per second
         self.cur_time = 0
+        self.counter = 0
+        self.move_ticker = 5
+
+        self.fps = None
+        self.frame_count = 0
 
         self.apple = self.create_apple()
 
-    def update(self) -> None:
+    def update(self) -> float:
         """Update play state."""
-        # Move the snake
+        # Get direction to move in
         opposites = {"S": "N", "N": "S", "W": "E", "E": "W"}
-        last_direction = self.direction
         self.direction = self.get_keyboard_input()
-        if self.direction is None or self.direction == opposites[last_direction]:
-            self.direction = last_direction
-        if self.cur_time >= 1 / self.move_speed:
-            self.snake.move_snake(self.direction)
-            self.cur_time = 0
-        # Check wall collision
-        if self.snake.collides_with_wall():
-            self.game.change_state("GameOverState", params={"score": self.score})
-        # Check body collision
-        if self.snake.collides(self.snake):
-            self.game.change_state("GameOverState", params={"score": self.score})
-        
-        # Check if we collide with apple
-        if self.snake.collides(self.apple):
-            self.snake.increase_length(1)
-            self.apple = self.create_apple()
-            self.score += 1
-            self.move_speed += 0.1
+        if self.direction == "PAUSED":
+            if self.move_ticker == 0: # Allow pausing and unpausing every 5 frames
+                self.paused = not self.paused
+                self.move_ticker = 5
+        if not self.paused and self.direction != "PAUSED":
+            if self.direction is None or self.direction == opposites[self.current_direction]:
+                self.direction = self.last_direction
+            else:
+                self.last_direction = self.direction
+            # Move the snake
+            if self.cur_time >= 1 / self.move_speed:
+                self.snake.move_snake(self.direction)
+                self.cur_time = 0
+                self.current_direction = self.direction
+            # Check wall collision
+            if self.snake.collides_with_wall():
+                self.game.change_state("GameOverState", params={"score": self.score})
+            # Check body collision
+            if self.snake.collides(self.snake):
+                self.game.change_state("GameOverState", params={"score": self.score})
+            
+            # Check if we collide with apple
+            if self.snake.collides(self.apple):
+                self.snake.increase_length(1)
+                self.apple = self.create_apple()
+                self.score += 1
+                self.move_speed += 0.1
 
         # Render screen
         self.game.screen.clear()
         self.render()
+        # Time operations
+        if self.move_ticker > 0:
+            self.move_ticker -= 1
+        self.frame_count += 1
+        dt = self.clock.tick() / 1000
+        self.cur_time += dt
 
-        self.cur_time += self.clock.tick() / 1000
+        return dt
+
 
     def render(self):
         """Render objects in play state."""
@@ -74,6 +94,21 @@ class PlayState(BaseState):
 
         # Draw snake
         self.snake.render()
+
+        # Draw score
+        self.game.screen.graphics["color"] = "white"
+        self.game.screen.graphics["font"] = "largeFont"
+        self.game.screen.draw_text(f"SCORE    {self.score}", (BOARD_SIZE + 2) * TILE_SIZE + (SCREEN_WIDTH - (BOARD_SIZE + 2) * TILE_SIZE) / 2, 4 * TILE_SIZE)
+
+        # Draw fps
+        self.game.screen.graphics["font"] = "mediumFont"
+        self.game.screen.draw_text(f"{self.fps} FPS", 0, 0, text_align="left")
+        # If paused, draw PAUSED text
+        if self.paused:
+            self.game.screen.graphics["color"] = "orange"
+            self.game.screen.graphics["font"] = "largeFont"
+            self.game.screen.draw_text("PAUSED", (BOARD_SIZE + 4) * TILE_SIZE / 2, TILE_SIZE * 4)
+
     
     def get_keyboard_input(self) -> str:
         """Get keyboard input in frame."""
@@ -87,6 +122,8 @@ class PlayState(BaseState):
                     return "E"
                 elif event.key == pygame.K_LEFT:
                     return "W"
+                elif event.key == pygame.K_ESCAPE:
+                    return "PAUSED"
             elif event.type == pygame.QUIT:
                 pygame.quit()
 

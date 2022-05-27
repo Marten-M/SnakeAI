@@ -19,6 +19,10 @@ class Game:
         self.screen = Screen(constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT)
         self.state = self.states[initial_state](self, None)
 
+        self.time = 0
+        self.frame_count += 1
+        self.fps = None
+
     def change_state(self, new_state, *ignore, params: dict) -> None:
         """
         Change game state.
@@ -37,6 +41,18 @@ class Game:
         """Update game."""
         while True:
             # Update game state
-            self.state.update()
+            self.time += self.state.update()
+            self.frame_count += 1
+    
+            if self.time >= 1:
+                self.fps = round(self.frame_count / self.time)
+                self.time = 0
+                self.frame_count = 0
+
+            # Draw FPS if state allows it
+            if self.state.drawFPS:
+                self.screen.graphics["color"] = "white"
+                self.screen.graphics["font"] = "mediumFont"
+                self.screen.draw_text(f"{self.fps} FPS", 5, 0, text_align="left")
             # Update screen
             pygame.display.update()
