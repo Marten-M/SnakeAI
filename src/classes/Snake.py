@@ -24,6 +24,10 @@ class Bodypart(GameElement):
         """Check if two body parts are equal."""
         return self.x == other.x and self.y == other.y
 
+    def __str__(self) -> str:
+        """Convert to string."""
+        return f"{[self.x, self.y]}"
+
 
 class Snake:
     def __init__(self, game, x: int, y: int) -> None:
@@ -78,8 +82,8 @@ class Snake:
         True if snake is colliding with other snake, False otherwise
         """
         if isinstance(other, Snake):
-            if other == self:
-                return self.head in other.body[:-1]
+            if other is self:
+                return self.head in other.body[:self.size - 1] and other.body[-1] != other.body[-2]
             else:
                 return self.head in other.body
         else:
@@ -94,13 +98,13 @@ class Snake:
         True if snake is colliding with a wall, False otherwise
         """
         # Ceiling collision
-        if self.head.y <= 0:
+        if self.head.y < 0:
             return True
         # Floor collision
         if self.head.y >= BOARD_SIZE:
             return True
         # Left wall collision
-        if self.head.x <= 0:
+        if self.head.x < 0:
             return True
         # Right wall collision
         if self.head.x >= BOARD_SIZE:
@@ -110,7 +114,19 @@ class Snake:
 
     def render(self) -> None:
         """Render snake."""
-        body_size = TILE_SIZE - 2
         self.game.screen.graphics["color"] = "white"
-        for body_part in self.body:
-            self.game.screen.draw_box(body_size, body_size, (body_part.x + 2) * TILE_SIZE + 1, (body_part.y + 2) * TILE_SIZE + 1)
+        for body_part in self.body[:-1]:
+            self.draw_body_part(body_part)
+        # Draw the head a different color
+        self.game.screen.graphics["color"] = "gray"
+        self.draw_body_part(self.head)
+    
+    def draw_body_part(self, body_part:Bodypart) -> None:
+        """
+        Draw body part onto the screen.
+
+        params:
+        body_part - Body part to be drawn onto the screen
+        """
+        body_size = TILE_SIZE - 2
+        self.game.screen.draw_box(body_size, body_size, (body_part.x + 2) * TILE_SIZE + 1, (body_part.y + 2) * TILE_SIZE + 1)
