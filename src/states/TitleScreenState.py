@@ -1,5 +1,6 @@
 """Title screen state class."""
 import pygame
+import sys
 
 # Get intellisense for Game class
 from typing import TYPE_CHECKING
@@ -12,11 +13,11 @@ from src.states.BaseState import BaseState
 class TitleScreenState(BaseState):
     def __init__(self, game, params: dict) -> None:
         """Initialize title screen"""
+        super().__init__()
         self.game: Game = game
         pygame.init()
         self.create_boxes()
         self.current_selection = 0
-        self.input_ticker = 0
         self.clock = pygame.time.Clock()
 
     def render(self) -> None:
@@ -40,9 +41,6 @@ class TitleScreenState(BaseState):
 
     def update(self) -> None:
         """Update screen."""
-        # Allow input only after 5 frames have passed
-        if self.input_ticker > 0:
-            self.input_ticker -= 1
         # Handle keyboard input
         self.handle_keyboard_input()
 
@@ -82,18 +80,19 @@ class TitleScreenState(BaseState):
         """
         Get change of selected box.
         """
-        # Only allow input if at least 5 frames have passed since last input
-        if self.input_ticker == 0:
-            for event in pygame.event.get():
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_RETURN:
-                        if self.current_selection == 1:
-                            self.game.change_state("PlayState", params=None)
-                        elif self.current_selection == 2:
-                            pygame.quit()
-                    elif event.key == pygame.K_UP or event.key == pygame.K_DOWN:
-                        self.current_selection = 1 if self.current_selection != 1 else 2
-                    elif event.key == pygame.K_ESCAPE:
-                        self.current_selection = 0
-                    self.input_ticker = 5
-            
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    if self.current_selection == 1:
+                        self.game.change_state("PlayState", params=None)
+                    elif self.current_selection == 2:
+                        pygame.quit()
+                        sys.exit(0)
+                    else:
+                        self.current_selection = 1
+                elif event.key in {pygame.K_DOWN, pygame.K_UP, pygame.K_w, pygame.K_s}:
+                    self.current_selection = 1 if self.current_selection != 1 else 2
+                elif event.key == pygame.K_ESCAPE:
+                    self.current_selection = 0
+                else:
+                    self.current_selection = 1

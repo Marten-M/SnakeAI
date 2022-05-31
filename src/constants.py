@@ -5,8 +5,8 @@ pygame.init()
 
 file_dir = os.path.dirname(__file__)
 
-SCREEN_WIDTH = 1140
-SCREEN_HEIGHT = 640
+SCREEN_WIDTH = 1200
+SCREEN_HEIGHT = 675
 
 BOARD_SIZE = 28
 TILE_SIZE = 20
@@ -22,5 +22,6 @@ gColors = {
     "black": (0, 0, 0),
     "white": (255, 255, 255),
     "orange": (255, 165, 0),
-    "gray": (128,128,128)
+    "gray": (128,128,128),
+    "red": (255, 0, 0)
 }
