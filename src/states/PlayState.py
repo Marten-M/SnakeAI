@@ -16,6 +16,7 @@ from src.classes.Apple import Apple
 class PlayState(BaseState):
     def __init__(self, game, params: dict) -> None:
         """Initialize PlayState class."""
+        super().__init__()
         pygame.init()
         self.game: Game = game
         self.score = 0
@@ -28,10 +29,6 @@ class PlayState(BaseState):
         self.move_speed = 2.4 # How many tiles to move per second
         self.cur_time = 0
         self.counter = 0
-        self.move_ticker = 5
-
-        self.fps = None
-        self.frame_count = 0
 
         self.apple = self.create_apple()
 
@@ -41,9 +38,7 @@ class PlayState(BaseState):
         opposites = {"S": "N", "N": "S", "W": "E", "E": "W"}
         self.direction = self.get_keyboard_input()
         if self.direction == "PAUSED":
-            if self.move_ticker == 0: # Allow pausing and unpausing every 5 frames
-                self.paused = not self.paused
-                self.move_ticker = 5
+            self.paused = not self.paused
         if not self.paused and self.direction != "PAUSED":
             if self.direction is None or self.direction == opposites[self.current_direction]:
                 self.direction = self.last_direction
@@ -56,30 +51,24 @@ class PlayState(BaseState):
                 self.current_direction = self.direction
             # Check wall collision
             if self.snake.collides_with_wall():
-                self.game.change_state("GameOverState", params={"score": self.score})
+                self.game.change_state("GameOverState")
             # Check body collision
             if self.snake.collides(self.snake):
-                self.game.change_state("GameOverState", params={"score": self.score})
-            
+                self.game.change_state("GameOverState")            
             # Check if we collide with apple
             if self.snake.collides(self.apple):
                 self.snake.increase_length(1)
                 self.apple = self.create_apple()
                 self.score += 1
                 self.move_speed += 0.1
-
         # Render screen
         self.game.screen.clear()
         self.render()
         # Time operations
-        if self.move_ticker > 0:
-            self.move_ticker -= 1
-        self.frame_count += 1
         dt = self.clock.tick() / 1000
         self.cur_time += dt
 
         return dt
-
 
     def render(self):
         """Render objects in play state."""
@@ -87,28 +76,20 @@ class PlayState(BaseState):
         self.game.screen.graphics["color"] = "white"
         self.game.screen.graphics["border-width"] = 2
         self.game.screen.draw_box(BOARD_SIZE * TILE_SIZE, BOARD_SIZE * TILE_SIZE, 2 * TILE_SIZE, 2 * TILE_SIZE, fill=False)
-
         # Draw apple
         apple_size = TILE_SIZE - 6
         self.game.screen.draw_box(apple_size, apple_size, (self.apple.x + 2) * TILE_SIZE + 3, (self.apple.y + 2) * TILE_SIZE + 3)
-
         # Draw snake
         self.snake.render()
-
         # Draw score
         self.game.screen.graphics["color"] = "white"
         self.game.screen.graphics["font"] = "largeFont"
         self.game.screen.draw_text(f"SCORE    {self.score}", (BOARD_SIZE + 2) * TILE_SIZE + (SCREEN_WIDTH - (BOARD_SIZE + 2) * TILE_SIZE) / 2, 4 * TILE_SIZE)
-
-        # Draw fps
-        self.game.screen.graphics["font"] = "mediumFont"
-        self.game.screen.draw_text(f"{self.fps} FPS", 0, 0, text_align="left")
         # If paused, draw PAUSED text
         if self.paused:
             self.game.screen.graphics["color"] = "orange"
             self.game.screen.graphics["font"] = "largeFont"
             self.game.screen.draw_text("PAUSED", (BOARD_SIZE + 4) * TILE_SIZE / 2, TILE_SIZE * 4)
-
     
     def get_keyboard_input(self) -> str:
         """Get keyboard input in frame."""
@@ -124,8 +105,6 @@ class PlayState(BaseState):
                     return "W"
                 elif event.key == pygame.K_ESCAPE:
                     return "PAUSED"
-            elif event.type == pygame.QUIT:
-                pygame.quit()
 
     def create_apple(self) -> Apple:
         """Create an Apple."""
@@ -134,4 +113,5 @@ class PlayState(BaseState):
             tmp = Apple()
         return tmp
 
-    
+    def exit(self) -> dict:
+        return {"render": self.render}
