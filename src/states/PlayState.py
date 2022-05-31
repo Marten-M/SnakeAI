@@ -90,18 +90,18 @@ class PlayState(BaseState):
             self.game.screen.graphics["color"] = "orange"
             self.game.screen.graphics["font"] = "largeFont"
             self.game.screen.draw_text("PAUSED", (BOARD_SIZE + 4) * TILE_SIZE / 2, TILE_SIZE * 4)
-    
+
     def get_keyboard_input(self) -> str:
         """Get keyboard input in frame."""
         for event in pygame.event.get():
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_DOWN:
+                if event.key in {pygame.K_DOWN, pygame.K_s}:
                     return "S"
-                elif event.key == pygame.K_UP:
+                elif event.key in {pygame.K_UP, pygame.K_w}:
                     return "N"
-                elif event.key == pygame.K_RIGHT:
+                elif event.key in {pygame.K_RIGHT, pygame.K_d}:
                     return "E"
-                elif event.key == pygame.K_LEFT:
+                elif event.key in {pygame.K_LEFT, pygame.K_a}:
                     return "W"
                 elif event.key == pygame.K_ESCAPE:
                     return "PAUSED"
