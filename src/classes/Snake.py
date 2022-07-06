@@ -10,19 +10,24 @@ from src.constants import TILE_SIZE, BOARD_SIZE
 from src.classes.GameElement import GameElement
 
 class Bodypart(GameElement):
-    def __init__(self, x: int, y: int) -> None:
+    def __init__(self, x: int, y: int, nr: int) -> None:
         """
         Initialze body part class.
         
         params:
         x - X coordinate of body part
         y - Y coordinate of body part
+        nr - the number of the body part
         """
         super().__init__(x, y)
 
     def __eq__(self, other) -> bool:
-        """Check if two body parts are equal."""
+        """Check if two body parts or a tuple formatted as (x, y) are equal."""
+        if isinstance(other, tuple):
+            return self.x == other[0] and self.y == other[1]
+
         return self.x == other.x and self.y == other.y
+        
 
     def __str__(self) -> str:
         """Convert to string."""
@@ -39,7 +44,7 @@ class Snake:
         y - starting Y coordinate of snake
         """
         self.game: Game = game
-        self.head = Bodypart(x, y)
+        self.head = Bodypart(x, y, 0)
         self.body = [self.head]
         self.size = 1
 
@@ -52,7 +57,7 @@ class Snake:
         """
         for i in range(size_increase):
             x, y = self.body[-1].x, self.body[-1].y
-            self.body.insert(self.size - 1, Bodypart(x, y))
+            self.body.insert(self.size - 1, Bodypart(x, y, self.size))
             self.size += 1
 
     def move_snake(self, head_direction: str) -> None:
