@@ -1,5 +1,4 @@
 """Snake game class."""
-
 import pygame
 
 from src import constants
