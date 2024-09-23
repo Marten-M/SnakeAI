@@ -11,6 +11,7 @@ SCREEN_HEIGHT = 675
 BOARD_SIZE = 28
 TILE_SIZE = 20
 
+
 gFonts = {
     "smallFont": pygame.font.Font(file_dir + "/../fonts/ARCADECLASSIC.TTF", 16),
     "mediumFont": pygame.font.Font(file_dir + "/../fonts/ARCADECLASSIC.TTF", 32),

@@ -11,18 +11,19 @@ from src.states.GameOverState import GameOverState
 
 
 class Game:
-    def __init__(self, initial_state) -> None:
+    def __init__(self, initial_state, params=None) -> None:
         """Initialize game class."""
         pygame.init()
         self.states = {"TitleScreenState": TitleScreenState, "PlayState": PlayState, "GameOverState": GameOverState}
         self.screen = Screen(constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT)
-        self.state = self.states[initial_state](self, None)
+        if "train" not in params:
+            self.state = self.states[initial_state](self, params)
 
         self.time = 0
         self.frame_count = 0
         self.fps = None
 
-    def change_state(self, new_state, *ignore, params: dict=dict()) -> None:
+    def change_state(self, new_state, *ignore, params=None) -> None:
         """
         Change game state.
 
@@ -30,6 +31,9 @@ class Game:
         new_state - new game state
         params - parameters to pass into new_state
         """
+        if params is None:
+            params = dict()
+
         exit_params = self.state.exit()
         if exit_params is not None:
             params = params | self.state.exit()
@@ -41,7 +45,7 @@ class Game:
             # Update game state
             self.time += self.state.update()
             self.frame_count += 1
-    
+
             if self.time >= 1:
                 self.fps = round(self.frame_count / self.time)
                 self.time = 0

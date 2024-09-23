@@ -9,10 +9,11 @@ from src.constants import TILE_SIZE, BOARD_SIZE
 
 from src.classes.GameElement import GameElement
 
-class Bodypart(GameElement):
+
+class BodyPart(GameElement):
     def __init__(self, x: int, y: int, nr: int) -> None:
         """
-        Initialze body part class.
+        Initialize body part class.
         
         params:
         x - X coordinate of body part
@@ -27,7 +28,6 @@ class Bodypart(GameElement):
             return self.x == other[0] and self.y == other[1]
 
         return self.x == other.x and self.y == other.y
-        
 
     def __str__(self) -> str:
         """Convert to string."""
@@ -44,11 +44,11 @@ class Snake:
         y - starting Y coordinate of snake
         """
         self.game: Game = game
-        self.head = Bodypart(x, y, 0)
+        self.head = BodyPart(x, y, 0)
         self.body = [self.head]
         self.size = 1
 
-    def increase_length(self, size_increase: int=1) -> None:
+    def increase_length(self, size_increase: int = 1) -> None:
         """
         Increase length of the snake.
 
@@ -57,7 +57,7 @@ class Snake:
         """
         for i in range(size_increase):
             x, y = self.body[-1].x, self.body[-1].y
-            self.body.insert(self.size - 1, Bodypart(x, y, self.size))
+            self.body.insert(self.size - 1, BodyPart(x, y, self.size))
             self.size += 1
 
     def move_snake(self, head_direction: str) -> None:
@@ -88,6 +88,8 @@ class Snake:
         """
         if isinstance(other, Snake):
             if other is self:
+                # Second part is necessary to not count the snake eating an apple and extending as it colliding with itself,
+                # since the body part is spawned right after the head, so it will be "inside" of the snake for 1 turn
                 return self.head in other.body[:self.size - 1] and other.body[-1] != other.body[-2]
             else:
                 return self.head in other.body
@@ -126,7 +128,7 @@ class Snake:
         self.game.screen.graphics["color"] = "gray"
         self.draw_body_part(self.head)
     
-    def draw_body_part(self, body_part:Bodypart) -> None:
+    def draw_body_part(self, body_part:BodyPart) -> None:
         """
         Draw body part onto the screen.
 

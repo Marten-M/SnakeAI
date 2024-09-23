@@ -1,3 +1,5 @@
-pygame
-tensorflow
+pygame~=2.1.3
+tensorflow~=2.16.1
 matplotlib
+tf-agents
+numpy~=1.26.4

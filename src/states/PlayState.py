@@ -5,9 +5,10 @@ import pygame
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from src.lib.Game import Game
-    from src.lib.AI import AI
+
+from src.lib.AI.AIPlayer import AIPlayer
 # Constants
-from src.constants import BOARD_SIZE, TILE_SIZE, SCREEN_WIDTH, SCREEN_HEIGHT
+from src.constants import BOARD_SIZE, TILE_SIZE, SCREEN_WIDTH
 # State imports
 from src.states.BaseState import BaseState
 # Class imports
@@ -17,27 +18,37 @@ from src.classes.Apple import Apple
 # Function imports
 from src.lib.functions import assign_distance
 
+
 class PlayState(BaseState):
     def __init__(self, game, params: dict) -> None:
-        """Initialize PlayState class."""
+        """
+        :params:
+        game - Game object that runs the state
+        params - dictionary containing parameter values. Required field is "player" (str). if "player" is "AI" then
+        "spedUp" (bool) and "modelPath" (str) must also be specified
+        Initialize PlayState class.
+        """
         super().__init__()
         pygame.init()
         self.game: Game = game
         self.score = 0
         self.paused = False
 
-        self.player = '' if not params["player"] else params["player"]
-        if self.player == "AI":
-            self.AI: AI = params["AI"]
+        self.sped_up = False
+
+        self.player = params["player"]
+        if self.player == "AI" and not params["train"]:
+            self.AI: AIPlayer = AIPlayer(game, params["modelPath"])
+            self.sped_up = params["spedUp"]
 
         self.snake = Snake(self.game, BOARD_SIZE // 2, BOARD_SIZE // 2)
-        print(self.snake.body.index((BOARD_SIZE // 2, BOARD_SIZE // 2)))
         self.direction = self.current_direction = self.last_direction = "E"
 
         self.clock = pygame.time.Clock()
-        self.move_speed = 2.4 # How many tiles to move per second
+        self.move_speed = 2.4  # How many tiles to move per second
         self.cur_time = 0
         self.counter = 0
+        self.moves_survived = 0
 
         self.apple = self.create_apple()
 
@@ -45,8 +56,9 @@ class PlayState(BaseState):
         """Update play state."""
         # Get direction to move in
         opposites = {"S": "N", "N": "S", "W": "E", "E": "W"}
+        events = pygame.event.get()
         if self.player != "AI":
-            self.direction = self.get_keyboard_input()
+            self.direction = self.get_keyboard_input(events)
         else:
             state = self.get_state()
             self.direction = self.AI.get_move(state)
@@ -59,14 +71,17 @@ class PlayState(BaseState):
                 self.direction = self.last_direction
             else:
                 self.last_direction = self.direction
-            # Move the snake
-            self.move_snake()
-            # Detect collisions
+
+            if not self.sped_up and self.cur_time >= 1 / self.move_speed:
+                self.move_snake()
+            elif self.sped_up:
+                self.move_snake()  # Do not wait for the delay if game is sped up
+
             self.detect_collisions()
-        # Render screen
+
         self.game.screen.clear()
         self.render()
-        # Time operations
+
         dt = self.clock.tick() / 1000
         self.cur_time += dt
 
@@ -93,9 +108,9 @@ class PlayState(BaseState):
             self.game.screen.graphics["font"] = "largeFont"
             self.game.screen.draw_text("PAUSED", (BOARD_SIZE + 4) * TILE_SIZE / 2, TILE_SIZE * 4)
 
-    def get_keyboard_input(self) -> str:
+    def get_keyboard_input(self, events) -> str:
         """Get keyboard input in frame."""
-        for event in pygame.event.get():
+        for event in events:
             if event.type == pygame.KEYDOWN:
                 if event.key in {pygame.K_DOWN, pygame.K_s}:
                     return "S"
@@ -136,22 +151,17 @@ class PlayState(BaseState):
             self.move_speed += 0.1
 
     def move_snake(self):
-        """Move the snake."""
-        if self.player != "AI":
-            if self.cur_time >= 1 / self.move_speed:
-                self.snake.move_snake(self.direction)
-                self.cur_time = 0
-                self.current_direction = self.direction
-        else:
-            self.snake.move_snake(self.direction)
-            self.current_direction = self.direction
+        self.snake.move_snake(self.direction)
+        self.cur_time = 0
+        self.current_direction = self.direction
+        self.moves_survived += 1
 
     def game_over(self):
         """Event handler for when game ends."""
         if self.player != "AI":
             self.game.change_state("GameOverState")
         else:
-            self.AI.new_game()
+            self.game_ended = True
 
     def get_state(self) -> list:
         """
@@ -159,17 +169,48 @@ class PlayState(BaseState):
 
         :return:
         list of state attributes in the form
-        [LEFT_DISTANCE, RIGHT_DISTANCE, UP_DISTANCE, DOWN_DISTANCE, HEAD_X, HEAD_Y, APPLE_X, APPLE_Y],
+        [LEFT_DISTANCE, RIGHT_DISTANCE, UP_DISTANCE, DOWN_DISTANCE, HEAD_X, HEAD_Y, MOVING_DIRECTION, APPLE_X, APPLE_Y], - OUTDATED
+        actual:
         where distances are distances from the wall or body, whichever is closer, if the snake were to move in that direction
         """
-        # Get horizontal distances
+        # # Get horizontal distances
         left_distance = assign_distance(self.snake.head.x - 1, -1, self.snake, direction="horizontal")
         right_distance = assign_distance(self.snake.head.x + 1, BOARD_SIZE, self.snake, direction="horizontal")
-        # Get vertical distances
+        # # Get vertical distances
         up_distance = assign_distance(self.snake.head.y, -1, self.snake, direction="vertical")
         down_distance = assign_distance(self.snake.head.y, BOARD_SIZE, self.snake, direction="vertical")
 
-        return [left_distance, right_distance, up_distance, down_distance, self.snake.head.x, self.snake.head.y, self.apple.x, self.apple.y]
+        apple_on_left = 1 if self.apple.x < self.snake.head.x else 0
+        apple_on_right = 1 if self.snake.head.x < self.apple.x else 0
+        apple_above = 1 if self.apple.y < self.snake.head.y else 0
+        apple_below = 1 if self.snake.head.y < self.apple.y else 0
 
-                    
+        going_to_die_left = 0
+        going_to_die_right = 0
+        going_to_die_down = 0
+        going_to_die_up = 0
+        if left_distance == 0:
+            going_to_die_left = 1
+        elif right_distance == 0:
+            going_to_die_right = 1
+        elif up_distance == 0:
+            going_to_die_up = 1
+        elif down_distance == 0:
+            going_to_die_down = 1
 
+        moving_left = self.current_direction == 'W'
+        moving_right = self.current_direction == 'E'
+        moving_up = self.current_direction == 'N'
+        moving_down = self.current_direction == 'S'
+
+        moving_toward_apple = 0
+        if apple_on_left and moving_left:
+            moving_toward_apple = 1
+        elif apple_on_right and moving_right:
+            moving_toward_apple = 1
+        elif apple_above and moving_up:
+            moving_toward_apple = 1
+        elif apple_below and moving_down:
+            moving_toward_apple = 1
+
+        return [moving_up, moving_right, moving_down, moving_left, apple_on_left, apple_on_right, apple_above, apple_below, moving_toward_apple, going_to_die_left, going_to_die_right, going_to_die_up, going_to_die_down]
