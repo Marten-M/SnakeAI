@@ -8,16 +8,10 @@ file_dir = os.path.dirname(__file__)
 SCREEN_WIDTH = 1200
 SCREEN_HEIGHT = 675
 
-<<<<<<< HEAD
 BOARD_SIZE = 14
 TILE_SIZE = 20
 
 
-=======
-BOARD_SIZE = 28
-TILE_SIZE = 20
-
->>>>>>> refs/remotes/origin/main
 gFonts = {
     "smallFont": pygame.font.Font(file_dir + "/../fonts/ARCADECLASSIC.TTF", 16),
     "mediumFont": pygame.font.Font(file_dir + "/../fonts/ARCADECLASSIC.TTF", 32),
