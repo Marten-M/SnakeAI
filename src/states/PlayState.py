@@ -25,12 +25,14 @@ class PlayState(BaseState):
         :params:
         game - Game object that runs the state
         params - dictionary containing parameter values. Required field is "player" (str). if "player" is "AI" then
-        "spedUp" (bool) and "modelPath" (str) must also be specified
+        "spedUp" (bool), "modelPath" (str) and "train" (bool) must also be specified
         Initialize PlayState class.
         """
         super().__init__()
         pygame.init()
         self.game: Game = game
+        self.params = params
+
         self.score = 0
         self.paused = False
 
@@ -49,6 +51,8 @@ class PlayState(BaseState):
         self.cur_time = 0
         self.counter = 0
         self.moves_survived = 0
+
+        self.game_ended = False
 
         self.apple = self.create_apple()
 
@@ -79,6 +83,12 @@ class PlayState(BaseState):
 
             self.detect_collisions()
 
+            if self.game_ended:
+                if self.player == "AI":
+                    self.game.change_state("PlayState", params=self.params)  # Start new game if AI is playing
+                else:
+                    self.game.change_state("GameOverState")
+
         self.game.screen.clear()
         self.render()
 
@@ -92,16 +102,19 @@ class PlayState(BaseState):
         # Draw game area box
         self.game.screen.graphics["color"] = "white"
         self.game.screen.graphics["border-width"] = 2
-        self.game.screen.draw_box(BOARD_SIZE * TILE_SIZE, BOARD_SIZE * TILE_SIZE, 2 * TILE_SIZE, 2 * TILE_SIZE, fill=False)
+        self.game.screen.draw_box(BOARD_SIZE * TILE_SIZE, BOARD_SIZE * TILE_SIZE,
+                                  2 * TILE_SIZE, 2 * TILE_SIZE, fill=False)
         # Draw apple
         apple_size = TILE_SIZE - 6
-        self.game.screen.draw_box(apple_size, apple_size, (self.apple.x + 2) * TILE_SIZE + 3, (self.apple.y + 2) * TILE_SIZE + 3)
+        self.game.screen.draw_box(apple_size, apple_size, (self.apple.x + 2) * TILE_SIZE + 3,
+                                  (self.apple.y + 2) * TILE_SIZE + 3)
         # Draw snake
         self.snake.render()
         # Draw score
         self.game.screen.graphics["color"] = "white"
         self.game.screen.graphics["font"] = "largeFont"
-        self.game.screen.draw_text(f"SCORE    {self.score}", (BOARD_SIZE + 2) * TILE_SIZE + (SCREEN_WIDTH - (BOARD_SIZE + 2) * TILE_SIZE) / 2, 4 * TILE_SIZE)
+        self.game.screen.draw_text(f"SCORE    {self.score}", (BOARD_SIZE + 2) * TILE_SIZE
+                                   + (SCREEN_WIDTH - (BOARD_SIZE + 2) * TILE_SIZE) / 2, 4 * TILE_SIZE)
         # If paused, draw PAUSED text
         if self.paused:
             self.game.screen.graphics["color"] = "orange"
@@ -158,59 +171,38 @@ class PlayState(BaseState):
 
     def game_over(self):
         """Event handler for when game ends."""
-        if self.player != "AI":
-            self.game.change_state("GameOverState")
-        else:
-            self.game_ended = True
+        self.game_ended = True
 
     def get_state(self) -> list:
         """
         Get current state of the game.
 
         :return:
-        list of state attributes in the form
-        [LEFT_DISTANCE, RIGHT_DISTANCE, UP_DISTANCE, DOWN_DISTANCE, HEAD_X, HEAD_Y, MOVING_DIRECTION, APPLE_X, APPLE_Y], - OUTDATED
-        actual:
-        where distances are distances from the wall or body, whichever is closer, if the snake were to move in that direction
+        list of state attributes
         """
-        # # Get horizontal distances
         left_distance = assign_distance(self.snake.head.x - 1, -1, self.snake, direction="horizontal")
         right_distance = assign_distance(self.snake.head.x + 1, BOARD_SIZE, self.snake, direction="horizontal")
-        # # Get vertical distances
         up_distance = assign_distance(self.snake.head.y, -1, self.snake, direction="vertical")
         down_distance = assign_distance(self.snake.head.y, BOARD_SIZE, self.snake, direction="vertical")
+
+        going_to_die_left = left_distance == 0
+        going_to_die_right = right_distance == 0
+        going_to_die_down = down_distance == 0
+        going_to_die_up = up_distance == 0
 
         apple_on_left = 1 if self.apple.x < self.snake.head.x else 0
         apple_on_right = 1 if self.snake.head.x < self.apple.x else 0
         apple_above = 1 if self.apple.y < self.snake.head.y else 0
         apple_below = 1 if self.snake.head.y < self.apple.y else 0
 
-        going_to_die_left = 0
-        going_to_die_right = 0
-        going_to_die_down = 0
-        going_to_die_up = 0
-        if left_distance == 0:
-            going_to_die_left = 1
-        elif right_distance == 0:
-            going_to_die_right = 1
-        elif up_distance == 0:
-            going_to_die_up = 1
-        elif down_distance == 0:
-            going_to_die_down = 1
-
         moving_left = self.current_direction == 'W'
         moving_right = self.current_direction == 'E'
         moving_up = self.current_direction == 'N'
         moving_down = self.current_direction == 'S'
 
-        moving_toward_apple = 0
-        if apple_on_left and moving_left:
-            moving_toward_apple = 1
-        elif apple_on_right and moving_right:
-            moving_toward_apple = 1
-        elif apple_above and moving_up:
-            moving_toward_apple = 1
-        elif apple_below and moving_down:
-            moving_toward_apple = 1
+        moving_toward_apple = ((apple_on_left and moving_left) or (apple_on_right and moving_right) or
+                               (apple_below and moving_down) or (apple_above and moving_up))
 
-        return [moving_up, moving_right, moving_down, moving_left, apple_on_left, apple_on_right, apple_above, apple_below, moving_toward_apple, going_to_die_left, going_to_die_right, going_to_die_up, going_to_die_down]
+        return [moving_up, moving_right, moving_down, moving_left, apple_on_left, apple_on_right,
+                apple_above, apple_below, moving_toward_apple, going_to_die_left, going_to_die_right,
+                going_to_die_up, going_to_die_down]

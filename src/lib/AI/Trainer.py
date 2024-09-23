@@ -22,7 +22,7 @@ class AITRainer:
 
         self.gamma = 0.9  # How much impact future actions have. High as the future plays a significant role
         self.epsilon = 1  # How often to make random moves
-        self.epsilon_decay = 0.996
+        self.epsilon_decay = 0.9 # We learn pretty often so keep it fairly low
         self.min_epsilon_value = 0.08
 
         self.batch_size = 64
@@ -65,15 +65,18 @@ class AITRainer:
 
                         if r > 0:  # If reward is negative then we lost
                             y[idx][a] += Q2[idx]
+                    # TODO have a memory and take a random sample
+                    self.model.fit(x, y, batch_size=self.batch_size, epochs=1, verbose=0)
 
-                    self.model.fit(x, y, batch_size=self.batch_size, epochs=1,
-                                   verbose=0)  # TODO have a memory and take a random sample
+                    # Decrease randomness every time we learn
+                    self.epsilon = max(self.min_epsilon_value, self.epsilon * self.epsilon_decay)
+
                 state = new_state
+
 
                 self.env.play_state.update()  # Update screen
 
-            # Decrease randomness rate after round is completed
-            self.epsilon = max(self.min_epsilon_value, self.epsilon * self.epsilon_decay)
+
 
             if save and episode % save_increment_generations == 0:
-                self.model.save_weights(f"{save_folder_path}/{episode}.weights")
+                self.model.save_weights(f"{save_folder_path}/{episode}.weights.h5")

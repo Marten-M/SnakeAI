@@ -8,7 +8,7 @@ def create_model():
     Create model for AI.
     """
     model = tf.keras.Sequential()
-    model.add(keras.layers.Input(shape=(13,)))  # Input tensor
+    model.add(tf.keras.Input(shape=(13,)))  # Input tensor
     model.add(keras.layers.Dense(units=64, activation="relu"))  # Hidden layer 1
     model.add(keras.layers.Dense(units=64, activation="relu"))  # Hidden layer 1
     model.add(keras.layers.Dense(units=4))  # Output layer

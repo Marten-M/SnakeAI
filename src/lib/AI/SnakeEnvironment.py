@@ -1,10 +1,4 @@
 """Python environment to help train neural network with."""
-import os
-# Keep using keras-2 (tf-keras) rather than keras-3 (keras).
-# This must be before other imports or it doesn't work
-os.environ['TF_USE_LEGACY_KERAS'] = '1'
-
-
 from tf_agents.environments import py_environment, utils
 from tf_agents.specs import array_spec
 import numpy as np
@@ -20,7 +14,7 @@ class SnakeEnvironment(py_environment.PyEnvironment):
         self._action_spec = array_spec.BoundedArraySpec(
             shape=(), dtype=np.int64, minimum=0, maximum=3, name="action"
         )
-        # Observation is a tuple containing 9 values
+
         self._observation_spec = array_spec.BoundedArraySpec(
             shape=tuple((1 for _ in range(13))), dtype=np.int32, name="observation"
         )
@@ -47,7 +41,6 @@ class SnakeEnvironment(py_environment.PyEnvironment):
 
     def _step(self, action):
         if self.episode_ended:
-            # Last action ended episode
             return self.reset()
         if self.play_state.game_ended:
             self.episode_ended = True

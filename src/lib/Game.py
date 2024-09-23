@@ -16,7 +16,7 @@ class Game:
         pygame.init()
         self.states = {"TitleScreenState": TitleScreenState, "PlayState": PlayState, "GameOverState": GameOverState}
         self.screen = Screen(constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT)
-        if "train" not in params:
+        if params["player"] == "AI" and not params["train"]:  # Don't set the state if we are training a model
             self.state = self.states[initial_state](self, params)
 
         self.time = 0

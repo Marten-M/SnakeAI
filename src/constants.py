@@ -8,7 +8,7 @@ file_dir = os.path.dirname(__file__)
 SCREEN_WIDTH = 1200
 SCREEN_HEIGHT = 675
 
-BOARD_SIZE = 28
+BOARD_SIZE = 14
 TILE_SIZE = 20
 
 
